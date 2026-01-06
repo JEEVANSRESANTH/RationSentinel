@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "stock_allocations",
         uniqueConstraints = @UniqueConstraint(
-                columnNames = {"fps_id", "commodity", "allocationMonth", "allocationYear"}
+                columnNames = {"fps_id", "commodity", "allocation_month", "allocation_year"}
+
         )
 )
 @Getter
@@ -23,7 +24,9 @@ public class StockAllocation {
 
     // 🔒 Allocation is ALWAYS tied to FPS
     @ManyToOne(optional = false)
+    @JoinColumn(name = "fps_id", nullable = false)
     private FairPriceShop fps;
+
 
     // 🔒 Controlled commodity values
     @Enumerated(EnumType.STRING)

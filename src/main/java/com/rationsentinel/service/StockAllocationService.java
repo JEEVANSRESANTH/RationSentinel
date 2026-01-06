@@ -1,8 +1,13 @@
 package com.rationsentinel.service;
 
+import com.rationsentinel.dto.StockAllocationResponseDTO;
 import com.rationsentinel.entity.*;
+import com.rationsentinel.entity.CommodityType;
+
 import com.rationsentinel.repository.FairPriceShopRepository;
 import com.rationsentinel.repository.StockAllocationRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,22 +24,22 @@ public class StockAllocationService {
         this.fairPriceShopRepository = fairPriceShopRepository;
     }
 
+    // =========================
+    // CREATE ALLOCATION (UNCHANGED)
+    // =========================
     public StockAllocation createAllocation(Long fpsId,
                                             CommodityType commodity,
                                             int quantity,
                                             int month,
                                             int year) {
 
-        // 1️⃣ Validate FPS existence
         FairPriceShop fps = fairPriceShopRepository.findById(fpsId)
                 .orElseThrow(() -> new IllegalArgumentException("FPS not found"));
 
-        // 2️⃣ Quantity must be positive
         if (quantity <= 0) {
             throw new IllegalArgumentException("Allocated quantity must be greater than zero");
         }
 
-        // 3️⃣ Prevent duplicate allocation (CRITICAL)
         boolean alreadyExists =
                 stockAllocationRepository.existsByFpsAndCommodityAndAllocationMonthAndAllocationYear(
                         fps, commodity, month, year
@@ -45,8 +50,21 @@ public class StockAllocationService {
                     "Allocation already exists for this FPS, commodity, and period"
             );
         }
+        // Month validation
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("Allocation month must be between 1 and 12");
+        }
 
-        // 4️⃣ Create allocation decision record
+
+        if (year < 2020 || year > 2100) {
+            throw new IllegalArgumentException("Allocation year is invalid");
+        }
+
+        if (commodity == null) {
+            throw new IllegalArgumentException("Commodity must be provided");
+        }
+
+
         StockAllocation allocation = new StockAllocation();
         allocation.setFps(fps);
         allocation.setCommodity(commodity);
@@ -56,7 +74,36 @@ public class StockAllocationService {
         allocation.setStatus(AllocationStatus.CREATED);
         allocation.setCreatedAt(LocalDateTime.now());
 
-        // 5️⃣ Persist (single source of truth)
         return stockAllocationRepository.save(allocation);
+    }
+
+    // =========================
+    // READ ALLOCATIONS (NEW)
+    // =========================
+    public Page<StockAllocationResponseDTO> getAllocations(
+            Long fpsId,
+            Integer allocationMonth,
+            Integer allocationYear,
+            CommodityType commodity,
+            Pageable pageable
+    ) {
+        return stockAllocationRepository
+                .findAllocationsWithFilters(
+                        fpsId,
+                        allocationMonth,
+                        allocationYear,
+                        commodity,
+                        pageable
+                )
+                .map(a -> new StockAllocationResponseDTO(
+                        a.getId(),
+                        a.getFps().getId(),
+                        a.getCommodity(),
+                        a.getQuantityAllocated(),
+                        a.getAllocationMonth(),
+                        a.getAllocationYear(),
+                        a.getStatus(),
+                        a.getCreatedAt()
+                ));
     }
 }
