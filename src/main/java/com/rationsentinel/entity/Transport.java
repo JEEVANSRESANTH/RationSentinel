@@ -27,4 +27,7 @@ public class Transport {
     private LocalDateTime dispatchTime;
     private LocalDateTime expectedArrivalTime;
     private LocalDateTime actualArrivalTime;
+
+    @Enumerated(EnumType.STRING)
+    private TransportStatus status;
 }

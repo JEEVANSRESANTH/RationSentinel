@@ -25,6 +25,7 @@ public class StockAllocationController {
     // CREATE (UNCHANGED)
     // =========================
     @PostMapping
+
     public StockAllocation createAllocation(
             @RequestBody StockAllocationRequest request
     ) {
@@ -40,6 +41,28 @@ public class StockAllocationController {
     // =========================
     // READ (NEW)
     // =========================
+    @PutMapping("/{id}/approve")
+    public StockAllocation approveAllocation(@PathVariable Long id,
+                                             @RequestHeader("X-ROLE") String role) {
+        return stockAllocationService.approveAllocation(id, role);
+    }
+
+    @PutMapping("/{id}/cancel")
+    public StockAllocation cancelAllocation(@PathVariable Long id,
+                                            @RequestHeader("X-ROLE") String role) {
+        return stockAllocationService.cancelAllocation(id, role);
+    }
+    @PutMapping("/{id}/dispatch")
+    public StockAllocation dispatchAllocation(@PathVariable Long id) {
+        return stockAllocationService.dispatchAllocation(id);
+    }
+    @PutMapping("/{id}/deliver")
+    public StockAllocation deliverAllocation(@PathVariable Long id) {
+        return stockAllocationService.deliverAllocation(id);
+    }
+
+
+
     @GetMapping
     public Page<StockAllocationResponseDTO> getAllocations(
             @RequestParam(required = false) Long fpsId,
